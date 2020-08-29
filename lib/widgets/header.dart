@@ -6,7 +6,7 @@ header(bool isTimeline, bool removeBackButton, {String title}) {
     title: Text(
       isTimeline ? 'PostGram' : title,
       style: TextStyle(
-        fontSize: isTimeline ? 35.0 : 25.0,
+        fontSize: isTimeline ? 30.0 : 20.0,
         fontFamily: isTimeline ? "Signatra" : null,
         color: Colors.white,
       ),

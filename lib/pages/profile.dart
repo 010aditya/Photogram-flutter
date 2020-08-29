@@ -1,9 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:photogram/models/user.dart';
 import 'package:photogram/utils/dbUtil.dart';
 import 'package:photogram/widgets/header.dart';
 import 'package:photogram/widgets/progress.dart';
+
+import 'edit_profile.dart';
 
 class Profile extends StatefulWidget {
   final userId;
@@ -42,52 +45,32 @@ class _ProfileState extends State<Profile> {
                           mainAxisSize: MainAxisSize.max,
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: <Widget>[
-                            Column(
-                              children: <Widget>[
-                                Text(
-                                  '1',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 25.0),
-                                ),
-                                Text(
-                                  'posts',
-                                  textAlign: TextAlign.center,
-                                )
-                              ],
-                            ),
-                            Column(
-                              children: <Widget>[
-                                Text('1',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 25.0)),
-                                Text('Followers', textAlign: TextAlign.center),
-                              ],
-                            ),
-                            Column(
-                              children: <Widget>[
-                                Text('1',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 25.0)),
-                                Text('Following', textAlign: TextAlign.center),
-                              ],
-                            ),
+                            connectionBuilder('Posts', 0),
+                            connectionBuilder('Followers', 0),
+                            connectionBuilder('Following', 0),
                           ],
                         ),
                         ButtonTheme(
                           minWidth: 200,
                           height: 25.0,
                           child: OutlineButton(
+                            onPressed: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => EditProfile(
+                                      user: user,
+                                    ),
+                                  ));
+                            },
                             child: Text(
                               'Edit Profile',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: TextStyle(fontWeight: FontWeight.bold,color: Colors.white),
                             ),
                             borderSide:
-                                BorderSide(color: Colors.black, width: 1.8),
+                                BorderSide(color: Colors.white, width: 1.8),
                             padding: EdgeInsets.symmetric(horizontal: 80.0),
-                            highlightedBorderColor: Colors.black,
+                            highlightedBorderColor: Colors.white,
                           ),
                         )
                       ],
@@ -97,32 +80,41 @@ class _ProfileState extends State<Profile> {
               ),
               Row(
                 children: <Widget>[
-                  Column(
-                 crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text('Aditya'),
-                      Text('Reading,Wiritng,\nCoffee is favorite'),
-                      Text('Hellow world!!'),
-                    ],
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(user.displayName,style: TextStyle(color: Colors.white),),
+                        Text('Reading,Wiritng,\nCoffee is favorite',style: TextStyle(color: Colors.white),),
+                        Text('Hellow world!!',style: TextStyle(color: Colors.white),),
+                      ],
+                    ),
                   ),
                 ],
               ),
               Divider(
-                height: 1.0,
+                height: 2.0,
+                color: Colors.white,
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: <Widget>[
-                  FlatButton(
-                    child: Icon(Icons.grid_on),
+                  Expanded(
+                    child: FlatButton(
+                      child: Icon(Icons.grid_on,color: Colors.white),
+                    ),
                   ),
-                  FlatButton(
-                    child: Icon(Icons.list),
+                  Expanded(
+                    child: FlatButton(
+                      child: Icon(Icons.list,color: Colors.white),
+                    ),
                   )
                 ],
               ),
               Divider(
                 height: 1.0,
+                  color: Colors.white
               )
             ],
           ),
@@ -131,10 +123,27 @@ class _ProfileState extends State<Profile> {
     );
   }
 
+  Column connectionBuilder(String label, int count) {
+    return Column(
+      children: <Widget>[
+        Text(
+          count.toString(),
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 25.0,color: Colors.white),
+        ),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white),
+        )
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: header(false, false, title: "Profile"),
+      backgroundColor: Colors.black,
+      appBar: header(false, false, title: 'Profile'),
       body: ListView(
         children: <Widget>[
           buildProfileHeader(),
