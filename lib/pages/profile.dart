@@ -1,9 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:photogram/models/user.dart';
+import 'package:photogram/pages/home.dart';
 import 'package:photogram/utils/dbUtil.dart';
 import 'package:photogram/widgets/header.dart';
+import 'package:photogram/widgets/post.dart';
+import 'package:photogram/widgets/post_tile.dart';
 import 'package:photogram/widgets/progress.dart';
 
 import 'edit_profile.dart';
@@ -18,6 +22,59 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
+  String currentUserId = currentUser?.id;
+  bool isLoading = false;
+  String postOrientation = '';
+  int postCount = 0;
+  List<Post> posts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    getProfilePosts();
+  }
+
+  getProfilePosts() async {
+    setState(() {
+      isLoading = true;
+    });
+    QuerySnapshot snapshot = await postRef
+        .document(widget.userId)
+        .collection('userPosts')
+        .orderBy('timestamp', descending: true)
+        .getDocuments();
+
+    setState(() {
+      isLoading = false;
+      postCount = snapshot.documents.length;
+      posts = snapshot.documents.map((doc) => Post.fromDocument(doc)).toList();
+    });
+  }
+
+  buildProfilePosts() {
+    if (isLoading) {
+      return circularProgress();
+    }
+    if (postOrientation == 'List') {
+      return Column(
+        children: posts,
+      );
+    }
+    List<GridTile> gridTiles = [];
+    posts.forEach((post) {
+      gridTiles.add(GridTile(child: PostTile(post)));
+    });
+    return GridView.count(
+      crossAxisCount: 3,
+      childAspectRatio: 1.0,
+      mainAxisSpacing: 1.5,
+      crossAxisSpacing: 1.5,
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      children: gridTiles,
+    );
+  }
+
   buildProfileHeader() {
     return FutureBuilder(
       future: usersRef.document(widget.userId).get(),
@@ -45,34 +102,12 @@ class _ProfileState extends State<Profile> {
                           mainAxisSize: MainAxisSize.max,
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: <Widget>[
-                            connectionBuilder('Posts', 0),
+                            connectionBuilder('Posts', postCount),
                             connectionBuilder('Followers', 0),
                             connectionBuilder('Following', 0),
                           ],
                         ),
-                        ButtonTheme(
-                          minWidth: 200,
-                          height: 25.0,
-                          child: OutlineButton(
-                            onPressed: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => EditProfile(
-                                      user: user,
-                                    ),
-                                  ));
-                            },
-                            child: Text(
-                              'Edit Profile',
-                              style: TextStyle(fontWeight: FontWeight.bold,color: Colors.white),
-                            ),
-                            borderSide:
-                                BorderSide(color: Colors.white, width: 1.8),
-                            padding: EdgeInsets.symmetric(horizontal: 80.0),
-                            highlightedBorderColor: Colors.white,
-                          ),
-                        )
+                        buildProfileButton(),
                       ],
                     ),
                   )
@@ -82,19 +117,27 @@ class _ProfileState extends State<Profile> {
                 children: <Widget>[
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(user.displayName,style: TextStyle(color: Colors.white),),
-                        Text('Reading,Wiritng,\nCoffee is favorite',style: TextStyle(color: Colors.white),),
-                        Text('Hellow world!!',style: TextStyle(color: Colors.white),),
-                      ],
+                    child: Container(
+                      width: 150,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            user.displayName,
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Text(
+                            user.bio,
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
               Divider(
-                height: 2.0,
+                height: 1.0,
                 color: Colors.white,
               ),
               Row(
@@ -102,20 +145,27 @@ class _ProfileState extends State<Profile> {
                 children: <Widget>[
                   Expanded(
                     child: FlatButton(
-                      child: Icon(Icons.grid_on,color: Colors.white),
+                      onPressed: () {
+                        setState(() {
+                          postOrientation = 'Grid';
+                        });
+                      },
+                      child: Icon(Icons.grid_on, color: Colors.white),
                     ),
                   ),
                   Expanded(
                     child: FlatButton(
-                      child: Icon(Icons.list,color: Colors.white),
+                      onPressed: () {
+                        setState(() {
+                          postOrientation = 'List';
+                        });
+                      },
+                      child: Icon(Icons.list, color: Colors.white),
                     ),
                   )
                 ],
               ),
-              Divider(
-                height: 1.0,
-                  color: Colors.white
-              )
+              Divider(height: 0.5, color: Colors.white)
             ],
           ),
         );
@@ -123,12 +173,50 @@ class _ProfileState extends State<Profile> {
     );
   }
 
+  editProfile() async {
+    final userId = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditProfile(
+            user: currentUser,
+          ),
+        ));
+    setState(() {
+      Profile(userId: userId);
+    });
+  }
+
+  buildButton(String text, Function function) {
+    return ButtonTheme(
+      minWidth: 200,
+      height: 25.0,
+      child: OutlineButton(
+        onPressed: () => editProfile(),
+        child: Text(
+          text,
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        borderSide: BorderSide(color: Colors.white, width: 1.8),
+        padding: EdgeInsets.symmetric(horizontal: 80.0),
+        highlightedBorderColor: Colors.white,
+      ),
+    );
+  }
+
+  buildProfileButton() {
+    bool isProfileOwner = currentUserId == widget.userId;
+    if (isProfileOwner) {
+      return buildButton('Edit Profile', editProfile);
+    }
+  }
+
   Column connectionBuilder(String label, int count) {
     return Column(
       children: <Widget>[
         Text(
           count.toString(),
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 25.0,color: Colors.white),
+          style: TextStyle(
+              fontWeight: FontWeight.w900, fontSize: 25.0, color: Colors.white),
         ),
         Text(
           label,
@@ -147,6 +235,7 @@ class _ProfileState extends State<Profile> {
       body: ListView(
         children: <Widget>[
           buildProfileHeader(),
+          buildProfilePosts(),
         ],
       ),
     );
