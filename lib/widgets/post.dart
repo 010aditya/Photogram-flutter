@@ -1,7 +1,11 @@
+import 'dart:async';
+
+import 'package:animator/animator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:photogram/models/user.dart';
+import 'package:photogram/pages/home.dart';
 import 'package:photogram/utils/dbUtil.dart';
 import 'package:photogram/widgets/progress.dart';
 
@@ -26,7 +30,7 @@ class Post extends StatefulWidget {
     this.likes,
   });
 
-  factory Post.fromDocument(DocumentSnapshot doc){
+  factory Post.fromDocument(DocumentSnapshot doc) {
     return Post(
       postId: doc['postId'],
       description: doc['description'],
@@ -52,21 +56,19 @@ class Post extends StatefulWidget {
   }
 
   @override
-  _PostState createState() =>
-      _PostState(
-          postId: this.postId,
-          description: this.description,
-          location: this.location,
-          userName: this.userName,
-          ownerId: this.ownerId,
-          mediaUrl: this.mediaUrl,
-          likes: this.likes,
-          likeCount: getLikeCount(this.likes)
-      );
+  _PostState createState() => _PostState(
+      postId: this.postId,
+      description: this.description,
+      location: this.location,
+      userName: this.userName,
+      ownerId: this.ownerId,
+      mediaUrl: this.mediaUrl,
+      likes: this.likes,
+      likeCount: getLikeCount(this.likes));
 }
 
 class _PostState extends State<Post> {
-
+  final String currentUserId = currentUser?.id;
   final String postId;
   final String description;
   final String location;
@@ -75,10 +77,18 @@ class _PostState extends State<Post> {
   final String mediaUrl;
   int likeCount;
   Map likes;
+  bool isLiked = false;
+  bool showHeart = false;
 
-  _PostState({this.postId, this.description, this.location, this.ownerId,
-    this.userName, this.mediaUrl, this.likes, this.likeCount});
-
+  _PostState(
+      {this.postId,
+      this.description,
+      this.location,
+      this.ownerId,
+      this.userName,
+      this.mediaUrl,
+      this.likes,
+      this.likeCount});
 
   buildPostHeader() {
     return FutureBuilder(
@@ -102,9 +112,15 @@ class _PostState extends State<Post> {
               )),
             ),
           ),
-          subtitle: Text(location,style: TextStyle(color: Colors.white),),
+          subtitle: Text(
+            location,
+            style: TextStyle(color: Colors.white),
+          ),
           trailing: IconButton(
-            icon: Icon(Icons.more_vert,color: Colors.white,),
+            icon: Icon(
+              Icons.more_vert,
+              color: Colors.white,
+            ),
           ),
         );
       },
@@ -113,14 +129,63 @@ class _PostState extends State<Post> {
 
   buildPostImage() {
     return GestureDetector(
-      onDoubleTap: () => print('Liking Post'),
+      onDoubleTap: () => handleLikePost(),
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[
-         cachedNetworkImage(mediaUrl),
+          cachedNetworkImage(mediaUrl),
+          showHeart
+              ? Animator(
+                  duration: Duration(milliseconds: 300),
+                  tween: Tween(begin: 0.8, end: 1.4),
+                  curve: Curves.easeOut,
+                  cycles: 0,
+                  builder: (context, animatorState, child) => Transform.scale(
+                    scale: animatorState.value,
+                    child: Icon(
+                      Icons.favorite,
+                      size: 80.0,
+                      color: Colors.pink,
+                    ),
+                  ),
+                )
+              : Text('')
         ],
       ),
     );
+  }
+
+  handleLikePost() {
+    bool _isLiked = likes[currentUserId] == true;
+    if (_isLiked) {
+      postRef
+          .document(ownerId)
+          .collection('userPosts')
+          .document(postId)
+          .updateData({'likes.$currentUserId': false});
+      setState(() {
+        likeCount -= 1;
+        isLiked = false;
+        likes[currentUserId] = false;
+      });
+    } else if (!_isLiked) {
+      postRef
+          .document(ownerId)
+          .collection('userPosts')
+          .document(postId)
+          .updateData({'likes.$currentUserId': true});
+      setState(() {
+        likeCount += 1;
+        isLiked = true;
+        likes[currentUserId] = true;
+        showHeart = true;
+      });
+      Timer(Duration(milliseconds: 500), () {
+        setState(() {
+          showHeart = false;
+        });
+      });
+    }
   }
 
   buildPostFooter() {
@@ -129,16 +194,20 @@ class _PostState extends State<Post> {
         Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            Padding(padding: EdgeInsets.only(top: 40.0, left: 20.0),),
+            Padding(
+              padding: EdgeInsets.only(top: 40.0, left: 20.0),
+            ),
             GestureDetector(
-              onTap: () => print('Liking post'),
+              onTap: () => handleLikePost(),
               child: Icon(
-                Icons.favorite_border,
+                isLiked ? Icons.favorite : Icons.favorite_border,
                 color: Colors.pink,
                 size: 28.0,
               ),
             ),
-            Padding(padding: EdgeInsets.only(right: 20.0),),
+            Padding(
+              padding: EdgeInsets.only(right: 20.0),
+            ),
             GestureDetector(
               onTap: () => print('Show comments'),
               child: Icon(
@@ -151,13 +220,12 @@ class _PostState extends State<Post> {
         ),
         Row(
           children: <Widget>[
-            Container(margin: EdgeInsets.only(left: 20.0),
+            Container(
+              margin: EdgeInsets.only(left: 20.0),
               child: Text(
                 "$likeCount likes",
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold
-                ),
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -165,17 +233,19 @@ class _PostState extends State<Post> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Container(margin: EdgeInsets.only(left: 20.0),
+            Container(
+              margin: EdgeInsets.only(left: 20.0),
               child: Text(
                 "$userName ",
-                style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold
-                ),
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
             Expanded(
-              child: Text(description,style: TextStyle(color: Colors.white),),
+              child: Text(
+                description,
+                style: TextStyle(color: Colors.white),
+              ),
             )
           ],
         ),
@@ -192,7 +262,6 @@ class _PostState extends State<Post> {
         buildPostImage(),
         buildPostFooter(),
       ],
-
     );
   }
 }
