@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:photogram/models/user.dart';
+import 'package:photogram/pages/comments.dart';
 import 'package:photogram/pages/home.dart';
 import 'package:photogram/utils/dbUtil.dart';
 import 'package:photogram/widgets/progress.dart';
@@ -136,7 +137,7 @@ class _PostState extends State<Post> {
           cachedNetworkImage(mediaUrl),
           showHeart
               ? Animator(
-                  duration: Duration(milliseconds: 300),
+                  duration: Duration(milliseconds: 400),
                   tween: Tween(begin: 0.8, end: 1.4),
                   curve: Curves.easeOut,
                   cycles: 0,
@@ -155,6 +156,41 @@ class _PostState extends State<Post> {
     );
   }
 
+  removeLikeFromActivityFeed() {
+    bool isNotPostOwner = currentUserId != ownerId;
+    if (isNotPostOwner) {
+      feedRef
+          .document(ownerId)
+          .collection('feedItems')
+          .document(postId)
+          .get()
+          .then((doc) {
+        if (doc.exists) {
+          doc.reference.delete();
+        }
+      });
+    }
+  }
+
+  addLikeToActivityFeed() {
+    bool isNotPostOwner = currentUserId != ownerId;
+    if (isNotPostOwner) {
+      feedRef
+          .document(ownerId)
+          .collection('feedItems')
+          .document(postId)
+          .setData({
+        'type': 'like',
+        'username': currentUser.username,
+        'userId': currentUser.id,
+        'userProfileImg': currentUser.photoUrl,
+        'postId': postId,
+        'mediaUrl': mediaUrl,
+        'timeStamp': timestamp,
+      });
+    }
+  }
+
   handleLikePost() {
     bool _isLiked = likes[currentUserId] == true;
     if (_isLiked) {
@@ -163,6 +199,7 @@ class _PostState extends State<Post> {
           .collection('userPosts')
           .document(postId)
           .updateData({'likes.$currentUserId': false});
+      removeLikeFromActivityFeed();
       setState(() {
         likeCount -= 1;
         isLiked = false;
@@ -174,6 +211,7 @@ class _PostState extends State<Post> {
           .collection('userPosts')
           .document(postId)
           .updateData({'likes.$currentUserId': true});
+      addLikeToActivityFeed();
       setState(() {
         likeCount += 1;
         isLiked = true;
@@ -209,7 +247,8 @@ class _PostState extends State<Post> {
               padding: EdgeInsets.only(right: 20.0),
             ),
             GestureDetector(
-              onTap: () => print('Show comments'),
+              onTap: () => showComments(context,
+                  postId: postId, ownerId: ownerId, medialUrl: mediaUrl),
               child: Icon(
                 Icons.comment,
                 color: Colors.blue[900],
@@ -251,6 +290,14 @@ class _PostState extends State<Post> {
         ),
       ],
     );
+  }
+
+  showComments(BuildContext context,
+      {String postId, String ownerId, String medialUrl}) {
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return Comments(
+          postId: postId, postOwnerId: ownerId, postMediaUrl: medialUrl);
+    }));
   }
 
   @override

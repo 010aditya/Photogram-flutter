@@ -87,7 +87,6 @@ class _HomeState extends State<Home> {
     currentUser = User.fromDocument(doc);
   }
 
-
   login() {
     googleSignIn.signIn();
   }

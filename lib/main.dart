@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'PhotoShare',
       theme: ThemeData(
-     primarySwatch:   Colors.deepPurple,
+        primarySwatch: Colors.deepPurple,
         accentColor: Colors.teal,
       ),
       home: Home(),

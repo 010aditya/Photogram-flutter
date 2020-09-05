@@ -3,6 +3,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 
 final usersRef = Firestore.instance.collection('users');
 final postRef = Firestore.instance.collection('posts');
+final commentsRef = Firestore.instance.collection('comments');
+final feedRef = Firestore.instance.collection('feeds');
 final StorageReference storageRef = FirebaseStorage.instance.ref();
 
 updateUsers(String docId) async {
