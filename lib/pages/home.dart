@@ -10,6 +10,7 @@ import 'package:photogram/pages/create_account.dart';
 import 'package:photogram/pages/profile.dart';
 import 'package:photogram/pages/search.dart';
 import 'package:photogram/pages/upload.dart';
+import 'package:photogram/utils/dbUtil.dart';
 
 import 'timeline.dart';
 
@@ -115,7 +116,7 @@ class _HomeState extends State<Home> {
     return Scaffold(
       body: PageView(
         children: <Widget>[
-          Timeline(),
+          Timeline(user : currentUser),
           ActivityFeed(),
           Upload(currentUser: currentUser),
           Search(),
