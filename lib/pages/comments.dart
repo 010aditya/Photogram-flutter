@@ -59,6 +59,7 @@ class CommentsState extends State<Comments> {
     });
 
     bool isNotPostOwner = postOwnerId != currentUser.id;
+    if(isNotPostOwner){
     feedRef.document(postOwnerId).collection('feedItems').add({
       'type': 'comment',
       'commentData': commentsController.text,
@@ -68,7 +69,7 @@ class CommentsState extends State<Comments> {
       'postId': postId,
       'mediaUrl': postMediaUrl,
       'timeStamp': timestamp,
-    });
+    });}
     commentsController.clear();
   }
 
@@ -80,12 +81,17 @@ class CommentsState extends State<Comments> {
       body: Column(
         children: <Widget>[
           Expanded(child: buildComment()),
-          Divider(),
+          Divider(
+          ),
           ListTile(
             trailing: OutlineButton(
+              color: Colors.white,
               onPressed: () => addComment(),
               borderSide: BorderSide.none,
-              child: Text('Post'),
+              child: Text('Post',
+              style: TextStyle(
+                color: Colors.white
+              ),),
             ),
             title: TextFormField(
               controller: commentsController,

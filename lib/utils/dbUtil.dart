@@ -5,6 +5,8 @@ final usersRef = Firestore.instance.collection('users');
 final postRef = Firestore.instance.collection('posts');
 final commentsRef = Firestore.instance.collection('comments');
 final feedRef = Firestore.instance.collection('feeds');
+final followersRef = Firestore.instance.collection('followers');
+final followingsRef = Firestore.instance.collection('following');
 final StorageReference storageRef = FirebaseStorage.instance.ref();
 
 updateUsers(String docId) async {

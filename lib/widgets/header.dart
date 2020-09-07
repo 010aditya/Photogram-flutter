@@ -10,6 +10,7 @@ header(bool isTimeline, bool removeBackButton, {String title}) {
         fontFamily: isTimeline ? "Signatra" : null,
         color: Colors.white,
       ),
+      overflow: TextOverflow.ellipsis,
     ),
     centerTitle: isTimeline ? true : false,
     backgroundColor: Colors.black,

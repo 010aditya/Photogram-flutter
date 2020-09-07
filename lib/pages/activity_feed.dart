@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:photogram/pages/home.dart';
+import 'package:photogram/pages/post_screen.dart';
+import 'package:photogram/pages/profile.dart';
 import 'package:photogram/utils/dbUtil.dart';
 import 'package:photogram/widgets/header.dart';
 import 'package:photogram/widgets/progress.dart';
@@ -103,11 +105,13 @@ class ActivityFeedItem extends StatelessWidget {
         userProfileImage: doc['userProfileImg'],
         type: doc['type']);
   }
-
-  configureMediaPreview() {
+navigateToPost(context){
+  Navigator.push(context, MaterialPageRoute(builder:(context) => PostScreen(userId: userId,postId: postId,)));
+}
+  configureMediaPreview(context) {
     if (type == 'like' || type == 'comment') {
       mediaPreview = GestureDetector(
-        onTap: () => print('showing post of $type'),
+        onTap: () => navigateToPost(context),
         child: Container(
           height: 50,
           width: 50,
@@ -140,14 +144,14 @@ class ActivityFeedItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    configureMediaPreview();
+    configureMediaPreview(context);
     return Padding(
       padding: EdgeInsets.only(bottom: 2.0),
       child: Container(
         color: Colors.white10,
         child: ListTile(
           title: GestureDetector(
-            onTap: () => print('show profile'),
+            onTap: () => showProfile(context,profileId: userId),
             child: RichText(
               overflow: TextOverflow.ellipsis,
               text: TextSpan(
@@ -181,4 +185,9 @@ class ActivityFeedItem extends StatelessWidget {
       ),
     );
   }
+
+  showProfile(context,{String profileId}){
+    Navigator.push(context, MaterialPageRoute(builder: (context) => Profile(userId: profileId,)));
+  }
+
 }

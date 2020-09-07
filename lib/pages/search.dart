@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:photogram/models/user.dart';
+import 'package:photogram/pages/profile.dart';
 import 'package:photogram/utils/dbUtil.dart';
 import 'package:photogram/widgets/progress.dart';
 
@@ -113,6 +114,9 @@ class _SearchState extends State<Search> {
     );
   }
 }
+showProfile(context,{String profileId}){
+  Navigator.push(context, MaterialPageRoute(builder: (context) => Profile(userId: profileId,)));
+}
 
 class UserResult extends StatelessWidget {
   final User user;
@@ -127,7 +131,7 @@ class UserResult extends StatelessWidget {
       child: Column(
         children: <Widget>[
           GestureDetector(
-            onTap: () => print('tapped'),
+            onTap: () => showProfile(context,profileId: user.id),
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor: Colors.white,

@@ -22,21 +22,56 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
+  bool isFollowing = false;
   String currentUserId = currentUser?.id;
   bool isLoading = false;
   String postOrientation = '';
   int postCount = 0;
+  int followerCount = 0;
+  int followingCount = 0;
   List<Post> posts = [];
 
   @override
   void initState() {
     super.initState();
     getProfilePosts();
+    getFollowers();
+    getFollowing();
+    checkIfFollowing();
+  }
+  checkIfFollowing()async{
+    DocumentSnapshot snapshot = await followersRef.document(widget.userId)
+        .collection('userFollowers')
+        .document(currentUserId)
+        .get();
+    setState(() {
+      isFollowing = snapshot.exists;
+    });
+  }
+
+  getFollowers()async{
+    QuerySnapshot snapshot = await followersRef.document(widget.userId)
+        .collection('userFollowers')
+        .getDocuments();
+    setState(() {
+      followerCount = snapshot.documents.length;
+    });
+  }
+
+  getFollowing()async{
+   QuerySnapshot snapshot=  await followingsRef.document(currentUserId)
+        .collection('userFollowing')
+        .getDocuments();
+
+   setState(() {
+     followingCount = snapshot.documents.length;
+   });
   }
 
   getProfilePosts() async {
     setState(() {
       isLoading = true;
+
     });
     QuerySnapshot snapshot = await postRef
         .document(widget.userId)
@@ -103,7 +138,7 @@ class _ProfileState extends State<Profile> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: <Widget>[
                             connectionBuilder('Posts', postCount),
-                            connectionBuilder('Followers', 0),
+                            connectionBuilder('Followers', followerCount),
                             connectionBuilder('Following', 0),
                           ],
                         ),
@@ -203,10 +238,89 @@ class _ProfileState extends State<Profile> {
     );
   }
 
+  handleUnFollow() {
+    setState(() {
+      isFollowing = false;
+    });
+//remove follower
+    followersRef
+        .document(widget.userId)
+        .collection('userFollowers')
+        .document(currentUserId)
+        .get()
+        .then((doc) {
+      if (doc.exists) {
+        doc.reference.delete();
+      }
+    });
+    //remove following
+
+    followingsRef
+        .document(currentUserId)
+        .collection('userFollowing')
+        .document(widget.userId)
+        .get()
+        .then((doc) {
+      if (doc.exists) {
+        doc.reference.delete();
+      }
+    });
+
+    //delete activityFeed item to the other user
+
+    feedRef
+        .document(widget.userId)
+        .collection('feedItems')
+        .document(currentUserId)
+        .get().then((doc) {
+      if(doc.exists){
+        doc.reference.delete();
+      }
+
+    });
+  }
+
+  handleFollow() {
+    setState(() {
+      isFollowing = true;
+    });
+//Make auth user follower of another user and update their followers collection
+    followersRef
+        .document(widget.userId)
+        .collection('userFollowers')
+        .document(currentUserId)
+        .setData({});
+    //put the other user in our collection
+
+    followingsRef
+        .document(currentUserId)
+        .collection('userFollowing')
+        .document(widget.userId)
+        .setData({});
+
+    //add activityFeed item to the other user
+
+    feedRef
+        .document(widget.userId)
+        .collection('feedItems')
+        .document(currentUserId)
+        .setData({
+      'type': 'follow',
+      'username': currentUser.username,
+      'userId': widget.userId,
+      'userProfileImg': currentUser.photoUrl,
+      'timeStamp': timestamp,
+    });
+  }
+
   buildProfileButton() {
     bool isProfileOwner = currentUserId == widget.userId;
     if (isProfileOwner) {
       return buildButton('Edit Profile', editProfile);
+    } else if (isFollowing) {
+      return buildButton('Unfollow', handleUnFollow);
+    } else if (!isFollowing) {
+      return buildButton('Follow', handleFollow);
     }
   }
 
