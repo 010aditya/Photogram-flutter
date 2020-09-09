@@ -226,7 +226,7 @@ class _ProfileState extends State<Profile> {
       minWidth: 200,
       height: 25.0,
       child: OutlineButton(
-        onPressed: () => editProfile(),
+        onPressed: () => function,
         child: Text(
           text,
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
